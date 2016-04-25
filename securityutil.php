@@ -1,4 +1,13 @@
 <?php
+require('HTMLPurifier.standalone.php');
+
+/* Configuration for html purifier library */
+$config = HTMLPurifier_Config::createDefault();
+$config->set('Core.Encoding', 'UTF-8');
+$config->set('Cache.SerializerPath', '/tmp');
+$purifier = new HTMLPurifier($config);
+
+
 /*
  * dummy implementation of the sql injection validation function
  */
@@ -15,7 +24,8 @@ function SanitizeUserDataArray($userdata) {
 }
 
 function SanitizeUserDataString ($userdata) {
-    return 'Naveen';
+    global $purifier;
+    return $purifier->purify($userdata);
 }
 
 function SanitizeUserData ($userdata) {
@@ -37,6 +47,15 @@ function SanitizeUserData ($userdata) {
      */
 
     return $userdata;
+}
+
+/* Check the get request if it contains any string that has
+ * possibility of cross-site scripting
+ * It is a get request where we do not expect to pass any html
+ * tag.
+ */
+foreach ($_GET as $key => $value) {
+    $_GET[$key] = htmlentities  ($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 }
 
 ?>

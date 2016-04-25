@@ -1,16 +1,37 @@
 <?php
+include('sqlparser.php');
+include('securityutil.php');
 
-/* Check the post request if it contains any string that has
- * possibility of cross-site scripting
- */
-foreach ($_POST as $key => $value) {
-    $_POST[$key] = htmlentities  ($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+$retval = runkit_function_copy('mysql_query', '__mysql_query');
+$retval = runkit_function_copy('mysql_fetch_array', '__mysql_fetch_array');
+
+function safe_mysql_query($sql,$conn) {
+    $p = new sqlParser($sql);
+    $parsed_qry = $p->parse();
+
+    // $parsed_qry can be validated here for sql injection
+    // this will stop all injected queries going to
+    // the database.
+    if (ValidateParsedQueryForSQLInjection ($parsed_qry, $sql) == false) {
+        return array();
+    }
+
+    // execute the query and return the result
+    return __mysql_query($sql, $conn);
 }
 
-/* Check the get request if it contains any string that has
- * possibility of cross-site scripting
- */
-foreach ($_GET as $key => $value) {
-    $_GET[$key] = htmlentities  ($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+function safe_mysql_fetch_array($result, $type) {
+    $result = __mysql_fetch_array($result, $type);
+
+    // sanitize the user data for all XSS related issues
+    $result = SanitizeUserData ($result);
+
+    return $result;
 }
+
+if ($retval) {
+    redefine_function ('mysql_query', '$sql,$conn', 'return safe_mysql_query($sql, $conn);');
+    redefine_function ('mysql_fetch_array', '$result,$type', 'return safe_mysql_fetch_array ($result, $type);');
+}
+
 ?>

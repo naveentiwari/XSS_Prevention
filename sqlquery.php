@@ -1,5 +1,5 @@
 <?php
-include('adv_security.php');
+include('security.php');
 
 $dbhost = 'localhost:8889';
 $dbuser = 'root';
@@ -14,7 +14,7 @@ $result = mysql_query( $sql, $conn );
 if(! $result ) { die('Could not enter data: ' . mysql_error()); }
 
 while ($row = mysql_fetch_array($result, MYSQL_BOTH)) {
-    printf("ID: %s  Name: %s", $row[0], $row[1]);  
+    print_r($row);
 }
 
 mysql_free_result($result);

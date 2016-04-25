@@ -1,20 +1,37 @@
 <?php
+include('sqlparser.php');
+include('securityutil.php');
 
-$retval = runkit_function_copy('mysql_query', 'orig_mysql_query');
+$retval = runkit_function_copy('mysql_query', '__mysql_query');
+$retval = runkit_function_copy('mysql_fetch_array', '__mysql_fetch_array');
 
 function safe_mysql_query($sql,$conn) {
-    echo $sql;
+    $p = new sqlParser($sql);
+    $parsed_qry = $p->parse();
+
+    // $parsed_qry can be validated here for sql injection
+    // this will stop all injected queries going to
+    // the database.
+    if (ValidateParsedQueryForSQLInjection ($parsed_qry, $sql) == false) {
+        return array();
+    }
+
+    // execute the query and return the result
+    return __mysql_query($sql, $conn);
 }
 
-$retval = runkit_function_redefine ('mysql_query', '$sql,$conn', 'return safe_mysql_query($sql, $conn);');
+function safe_mysql_fetch_array($result, $type) {
+    $result = __mysql_fetch_array($result, $type);
 
-$username = 'username';
-$fname    = 'fname';
-$lname    = 'lname';
-$email    = 'email';
-$hashedpassword = 'hashedpasswd';
-$sql = "INSERT INTO user_info  (username,shpasswd,fname,lname,email) VALUES ".
-       "('$username','$hashedpassword', '$fname', '$lname','$email')";
+    // sanitize the user data for all XSS related issues
+    $result = SanitizeUserData ($result);
 
-mysql_query($sql, 'b');
+    return $result;
+}
+
+if ($retval) {
+    redefine_function ('mysql_query', '$sql,$conn', 'return safe_mysql_query($sql, $conn);');
+    redefine_function ('mysql_fetch_array', '$result,$type', 'return safe_mysql_fetch_array ($result, $type);');
+}
+
 ?>

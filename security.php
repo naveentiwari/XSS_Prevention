@@ -4,6 +4,7 @@ include('securityutil.php');
 
 $retval = runkit_function_copy('mysql_query', '__mysql_query');
 $retval = runkit_function_copy('mysql_fetch_array', '__mysql_fetch_array');
+$retval = runkit_function_copy('fread', '__fread');
 
 function safe_mysql_query($sql,$conn) {
     $p = new sqlParser($sql);
@@ -29,9 +30,14 @@ function safe_mysql_fetch_array($result, $type) {
     return $result;
 }
 
+function safe_fread($handle, $length) {
+    return SanitizeUserData(__fread($handle, $length));
+}
+
 if ($retval) {
     redefine_function ('mysql_query', '$sql,$conn', 'return safe_mysql_query($sql, $conn);');
     redefine_function ('mysql_fetch_array', '$result,$type', 'return safe_mysql_fetch_array ($result, $type);');
+    redefine_function ('fread', '$handle,$length', 'return safe_fread($handle, $length);');
 }
 
 ?>

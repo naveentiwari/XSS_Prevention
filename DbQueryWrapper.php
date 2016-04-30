@@ -46,7 +46,7 @@ class DBQueryWrapper {
 
     public function encodeDBResult ($result) {
         if (gettype($result) == 'string') {
-            return $this->_encoder->encodePreChars ($result);
+            return '"' . $this->_encoder->encodePreChars ($result) . '"';
         }
 
         if (gettype($result) == 'array') {

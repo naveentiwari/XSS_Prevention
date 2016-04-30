@@ -1,6 +1,5 @@
 <?php
-
-require('htmlencode.php');
+require_once ('htmlencode.php');
 
 class DBQueryWrapper {
     private $db;
@@ -33,8 +32,12 @@ class DBQueryWrapper {
             $this->_lasterror = '';
         } catch (Exception $e) {
             $this->_lasterror = $e->getMessage();
-            return false;
+            $this->_isInitialized = false;
         }
+    }
+
+    public function IsInitialized () {
+        return $this->_isInitialized;
     }
 
     private function SetEncoderInfo () {
